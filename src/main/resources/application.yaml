@@ -1,0 +1,178 @@
+spring:
+  application:
+    name: Aiven
+
+  profiles:
+    active: local
+
+  security:
+    user:
+      name: user
+      password: 1
+
+  # JPA 공통 설정
+  jpa:
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+        use_sql_comments: true
+        default_batch_fetch_size: 100
+
+  # Redis 공통 설정
+  data:
+    redis:
+      timeout: 3000ms
+
+# Actuator
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: when-authorized
+  metrics:
+    tags:
+      application: ${spring.application.name}
+
+# Logging
+logging:
+  level:
+    root: INFO
+    com.jeinsdean.aiven: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+# JWT 설정
+jwt:
+  secret: ${JWT_SECRET:your-256-bit-secret-key-change-in-production-please-make-it-long-enough}
+  access-token-validity: 3600000      # 1시간
+  refresh-token-validity: 604800000   # 7일
+
+# AI Client 설정
+ai:
+  openai:
+    api-key: ${OPENAI_API_KEY:}
+    model: gpt-4
+    max-tokens: 1000
+    temperature: 0.7
+  claude:
+    api-key: ${CLAUDE_API_KEY:}
+    model: claude-3-sonnet-20240229
+    max-tokens: 1000
+  timeout: 30000                       # 30초
+
+# 위치 기반 서비스
+location:
+  kakao:
+    api-key: ${KAKAO_API_KEY:}
+  google:
+    api-key: ${GOOGLE_MAPS_API_KEY:}
+
+---
+# Local Profile
+spring:
+  config:
+    activate:
+      on-profile: local
+
+  datasource:
+    url: jdbc:h2:mem:aiven;MODE=MySQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+logging:
+  level:
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+
+---
+# Dev Profile
+spring:
+  config:
+    activate:
+      on-profile: dev
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/aiven_dev?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: ${DB_USERNAME:aiven}
+    password: ${DB_PASSWORD:}
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+      connection-timeout: 30000
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+
+---
+# Prod Profile
+spring:
+  config:
+    activate:
+      on-profile: prod
+
+  datasource:
+    url: jdbc:mysql://${DB_HOST}:${DB_PORT:3306}/${DB_NAME}?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 10
+      connection-timeout: 30000
+      max-lifetime: 1800000
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: false
+
+logging:
+  level:
+    root: WARN
+    com.jeinsdean.aiven: INFO
+  file:
+    name: /var/log/aiven/application.log
+    max-size: 100MB
+    max-history: 30
