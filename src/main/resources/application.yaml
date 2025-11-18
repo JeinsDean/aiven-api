@@ -136,11 +136,11 @@ spring:
     baseline-on-migrate: true
 
 ---
-# Prod Profile
+# Prd Profile
 spring:
   config:
     activate:
-      on-profile: prod
+      on-profile: prd
 
   datasource:
     url: jdbc:mysql://${DB_HOST}:${DB_PORT:3306}/${DB_NAME}?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
