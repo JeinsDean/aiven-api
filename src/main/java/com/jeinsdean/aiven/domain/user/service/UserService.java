@@ -35,7 +35,7 @@ public class UserService {
      */
     @Transactional
     public UserResponse createUser(UserCreateRequest request) {
-        // 이메일 중복 체크
+        // 이메일 중복 체크.
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new BusinessException(ErrorCode.DUPLICATE_EMAIL);
         }
