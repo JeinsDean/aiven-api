@@ -13,61 +13,30 @@ import java.time.LocalDateTime;
 /**
  * 모든 엔티티의 기본 클래스
  * 생성/수정 시간 및 작성자 자동 관리
- * Soft Delete 지원
  */
 @Getter
 @MappedSuperclass
 @EntityListeners(AuditingEntityListener.class)
 public abstract class BaseEntity {
 
+    /** 생성일시 */
     @CreatedDate
-    @Column(nullable = false, updatable = false)
-    private LocalDateTime createdAt;
+    @Column(name = "crt_dt", nullable = false, updatable = false)
+    private LocalDateTime crtDt;
 
+    /** 수정일시 */
     @LastModifiedDate
-    @Column(nullable = false)
-    private LocalDateTime updatedAt;
+    @Column(name = "chg_dt", nullable = false)
+    private LocalDateTime chgDt;
 
+    /** 생성자ID */
     @CreatedBy
-    @Column(updatable = false, length = 100)
-    private String createdBy;
+    @Column(name = "crt_user_id", updatable = false, length = 50)
+    private String crtUserId;
 
+    /** 수정자ID */
     @LastModifiedBy
-    @Column(length = 100)
-    private String modifiedBy;
+    @Column(name = "chg_user_id", length = 50)
+    private String chgUserId;
 
-    /**
-     * Soft Delete 플래그
-     * 실제 데이터는 삭제하지 않고 논리적으로만 삭제 처리
-     * 대규모 서비스에서 데이터 복구 및 감사(audit) 목적
-     */
-    @Column(nullable = false)
-    private Boolean deleted = false;
-
-    @Column
-    private LocalDateTime deletedAt;
-
-    /**
-     * Soft Delete 처리
-     * 실제 DELETE 쿼리 대신 deleted = true로 업데이트
-     */
-    public void delete() {
-        this.deleted = true;
-        this.deletedAt = LocalDateTime.now();
-    }
-
-    /**
-     * 삭제 취소 (복구)
-     */
-    public void restore() {
-        this.deleted = false;
-        this.deletedAt = null;
-    }
-
-    /**
-     * 삭제 여부 확인
-     */
-    public boolean isDeleted() {
-        return Boolean.TRUE.equals(this.deleted);
-    }
 }

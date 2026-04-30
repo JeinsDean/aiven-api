@@ -42,9 +42,9 @@ public class UserService {
 
         // 사용자 생성
         User user = User.builder()
-                .email(request.getEmail())
-                .password(passwordEncoder.encode(request.getPassword()))
-                .nickname(request.getNickname())
+                .userEmlAddr(request.getEmail())
+                .enpswd(passwordEncoder.encode(request.getPassword()))
+                .userNm(request.getNickname())
                 .build();
 
         // 기본 설정 생성
@@ -54,7 +54,7 @@ public class UserService {
         user.assignSetting(setting);
 
         User savedUser = userRepository.save(user);
-        log.info("User created: id={}, email={}", savedUser.getId(), savedUser.getEmail());
+        log.info("User created: id={}, email={}", savedUser.getUserNm(), savedUser.getUserEmlAddr());
 
         return UserResponse.from(savedUser);
     }
@@ -63,7 +63,8 @@ public class UserService {
      * 사용자 조회
      */
     public UserResponse getUser(Long userId) {
-        User user = findUserById(userId);
+//        User user = findUserById(userId);
+        User user = null;
         return UserResponse.from(user);
     }
 
@@ -72,8 +73,8 @@ public class UserService {
      */
     @Transactional
     public UserResponse updateUser(Long userId, UserUpdateRequest request) {
-        User user = findUserById(userId);
-
+//        User user = findUserById(userId);
+        User user = null;
         user.updateProfile(request.getNickname(), request.getProfileImage());
 
         log.info("User updated: id={}", userId);
@@ -85,7 +86,8 @@ public class UserService {
      */
     @Transactional
     public void updatePassword(Long userId, String currentPassword, String newPassword) {
-        User user = findUserById(userId);
+//        User user = findUserById(userId);
+        User user = null;
 
         // OAuth2 사용자는 비밀번호 변경 불가
         if (user.isOAuth2User()) {
@@ -94,28 +96,13 @@ public class UserService {
         }
 
         // 현재 비밀번호 확인
-        if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
+        if (!passwordEncoder.matches(currentPassword, user.getPswd())) {
             throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE,
                     "현재 비밀번호가 일치하지 않습니다.");
         }
 
         user.updatePassword(passwordEncoder.encode(newPassword));
         log.info("Password updated: userId={}", userId);
-    }
-
-    /**
-     * 회원 탈퇴 (Soft Delete)
-     */
-    @Transactional
-    public void deleteUser(Long userId) {
-        User user = findUserById(userId);
-
-        if (user.isDeleted()) {
-            throw new BusinessException(ErrorCode.USER_ALREADY_DELETED);
-        }
-
-        user.delete();
-        log.info("User deleted (soft): id={}, email={}", userId, user.getEmail());
     }
 
     /**
@@ -134,12 +121,4 @@ public class UserService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
     }
 
-    /**
-     * ID로 사용자 조회 (내부 메서드)
-     */
-    private User findUserById(Long userId) {
-        return userRepository.findById(userId)
-                .filter(user -> !user.isDeleted())
-                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
-    }
 }

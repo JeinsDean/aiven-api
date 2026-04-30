@@ -7,90 +7,108 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
 /**
  * 사용자 엔티티
+ * 공공데이터 공통표준용어 기준 컬럼명 적용
  *
- * 대규모 서비스 설계:
- * - email을 Unique Index로 빠른 조회
- * - OAuth2 제공자별 식별자 관리
- * - 비밀번호는 nullable (소셜 로그인 지원)
+ * 테이블명 : users
+ * PK       : user_sn (사용자일련번호)
+ *
+ * 컬럼명 규칙 (snake_case → camelCase)
+ *   user_sn          → userSn
+ *   user_eml_addr    → userEmlAddr
+ *   enpswd           → enpswd
+ *   user_nm          → userNm
+ *   img_file_path_nm → imgFilePathNm
+ *   offr_se_cd       → offrSeCd
+ *   offr_id          → offrId
+ *   role_se_cd       → roleSeCd
+ *   del_yn           → delYn
+ *   del_dt           → delDt
  */
 @Entity
-@Table(name = "users", indexes = {
-        @Index(name = "idx_email", columnList = "email"),
-        @Index(name = "idx_oauth", columnList = "provider, providerId")
-})
+@Table(
+        name = "users",
+        indexes = {
+                @Index(name = "idx_user_eml_addr", columnList = "user_eml_addr"),
+                @Index(name = "idx_offr_se_cd_offr_id", columnList = "offr_se_cd, offr_id")
+        }
+)
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class User extends BaseEntity {
 
+    /** 사용자일련번호 (PK) */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Column(name = "user_sn")
+    private Long userSn;
 
-    @Column(nullable = false, unique = true, length = 100)
-    private String email;
+    /** 사용자이메일주소 */
+    @Column(name = "user_eml_addr", nullable = false, unique = true, length = 320)
+    private String userEmlAddr;
 
-    @Column(length = 255)
-    private String password;  // 소셜 로그인 시 null
+    /** 암호화비밀번호 (소셜 로그인 시 null) */
+    @Column(name = "pswd", length = 256)
+    private String pswd;
 
-    @Column(nullable = false, length = 50)
-    private String nickname;
+    /** 사용자명 (닉네임) */
+    @Column(name = "user_nm", nullable = false, length = 100)
+    private String userNm;
 
-    @Column(length = 500)
-    private String profileImage;
+    /** 이미지파일경로명 (프로필 이미지) */
+    @Column(name = "img_file_path_nm", length = 500)
+    private String imgFilePathNm;
 
-    /**
-     * OAuth2 제공자 (GOOGLE, KAKAO, NAVER 등)
-     */
-    @Column(length = 20)
-    private String provider;
+    /** 제공자구분코드 (GOOGLE, KAKAO, NAVER 등) */
+    @Column(name = "offr_se_cd", length = 20)
+    private String offrSeCd;
 
-    /**
-     * OAuth2 제공자의 사용자 식별자
-     */
-    @Column(length = 100)
-    private String providerId;
+    /** 제공자식별자 (OAuth2 제공자의 사용자 고유 ID) */
+    @Column(name = "offr_id", length = 100)
+    private String offrId;
 
-    /**
-     * 사용자 역할
-     */
+    /** 역할구분코드 */
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
-    private UserRole role = UserRole.USER;
+    @Column(name = "role_se_cd", nullable = false, length = 20)
+    private UserRole roleSeCd = UserRole.USER;
 
-    /**
-     * 사용자 설정 (1:1 관계)
-     */
+    /** 삭제여부 */
+    @Column(name = "del_yn", nullable = false)
+    private Boolean delYn = false;
+
+    /** 삭제일시 */
+    @Column(name = "del_dt")
+    private LocalDateTime delDt;
+
+    /** 사용자 설정 (1:1) */
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private UserSetting setting;
 
     @Builder
-    public User(String email, String password, String nickname,
-                String profileImage, String provider, String providerId) {
-        this.email = email;
-        this.password = password;
-        this.nickname = nickname;
-        this.profileImage = profileImage;
-        this.provider = provider;
-        this.providerId = providerId;
-        this.role = UserRole.USER;
+    public User(String userEmlAddr, String enpswd, String userNm,
+                String imgFilePathNm, String offrSeCd, String offrId) {
+        this.userEmlAddr = userEmlAddr;
+        this.pswd = enpswd;
+        this.userNm = userNm;
+        this.imgFilePathNm = imgFilePathNm;
+        this.offrSeCd = offrSeCd;
+        this.offrId = offrId;
+        this.roleSeCd = UserRole.USER;
+        this.delYn = false;
     }
 
-    /**
-     * 비즈니스 메서드
-     */
-    public void updateProfile(String nickname, String profileImage) {
-        if (nickname != null) {
-            this.nickname = nickname;
-        }
-        if (profileImage != null) {
-            this.profileImage = profileImage;
-        }
+    // ── 비즈니스 메서드 ───────────────────────────────
+
+    public void updateProfile(String userNm, String imgFilePathNm) {
+        if (userNm != null) this.userNm = userNm;
+        if (imgFilePathNm != null) this.imgFilePathNm = imgFilePathNm;
     }
 
-    public void updatePassword(String password) {
-        this.password = password;
+    public void updatePassword(String encodedPassword) {
+        this.pswd = encodedPassword;
     }
 
     public void assignSetting(UserSetting setting) {
@@ -98,13 +116,28 @@ public class User extends BaseEntity {
         setting.assignUser(this);
     }
 
-    public boolean isOAuth2User() {
-        return provider != null && providerId != null;
+    /** Soft Delete */
+    public void delete() {
+        this.delYn = true;
+        this.delDt = LocalDateTime.now();
     }
 
-    /**
-     * 사용자 역할
-     */
+    /** 삭제 복구 */
+    public void restore() {
+        this.delYn = false;
+        this.delDt = null;
+    }
+
+    public boolean isDeleted() {
+        return Boolean.TRUE.equals(this.delYn);
+    }
+
+    public boolean isOAuth2User() {
+        return offrSeCd != null && offrId != null;
+    }
+
+    // ── 역할 코드 ─────────────────────────────────────
+
     public enum UserRole {
         USER,
         ADMIN

@@ -1,6 +1,6 @@
 plugins {
     java
-    id("org.springframework.boot") version "3.5.7"
+    id("org.springframework.boot") version "4.0.6"
     id("io.spring.dependency-management") version "1.1.7"
 }
 
@@ -25,39 +25,54 @@ repositories {
 }
 
 dependencies {
-    implementation("org.springframework.boot:spring-boot-starter-actuator")
-    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
-    implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
-    implementation("org.springframework.boot:spring-boot-starter-security")
-    implementation("org.springframework.boot:spring-boot-starter-validation")
-    implementation("org.springframework.boot:spring-boot-starter-web")
 
-    // WebFlux (비동기 HTTP 클라이언트 - AI API 호출용)
+    // ── Spring Boot Core ──────────────────────────────────────
+    implementation("org.springframework.boot:spring-boot-starter-web")
+    implementation("org.springframework.boot:spring-boot-starter-validation")
+    implementation("org.springframework.boot:spring-boot-starter-actuator")
+
+    // ── Security ──────────────────────────────────────────────
+    implementation("org.springframework.boot:spring-boot-starter-security")
+
+    // ── Data ──────────────────────────────────────────────────
+    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+    implementation("org.springframework.boot:spring-boot-starter-data-redis")
+    implementation("org.springframework.boot:spring-boot-starter-cache")
+
+    // ── Async / Reactive (AI API 호출용) ───────────────────────
     implementation("org.springframework.boot:spring-boot-starter-webflux")
-    implementation("io.projectreactor:reactor-core")
+
+    // ── JWT ───────────────────────────────────────────────────
+    implementation("io.jsonwebtoken:jjwt-api:0.13.0")
+    runtimeOnly("io.jsonwebtoken:jjwt-impl:0.13.0")
+    runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.13.0")
+
+    // ── API Docs (Swagger)─────────────────────────────────────
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.2")
+
+    // ── Lombok ────────────────────────────────────────────────
+    compileOnly("org.projectlombok:lombok")
+    annotationProcessor("org.projectlombok:lombok")
+    testCompileOnly("org.projectlombok:lombok")
+    testAnnotationProcessor("org.projectlombok:lombok")
+
+    // ── Dev Tools ─────────────────────────────────────────────
+    developmentOnly("org.springframework.boot:spring-boot-devtools")
+    annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
 
     // Redis (캐싱 - AI 응답 캐시)
     implementation("org.springframework.boot:spring-boot-starter-data-redis")
     implementation("org.springframework.boot:spring-boot-starter-cache")
 
-    // API Documentation (Swagger)
-    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.14")
+    // ── Database ──────────────────────────────────────────────
+    runtimeOnly("com.h2database:h2")                       // local
+    // runtimeOnly("com.mysql:mysql-connector-j")          // dev/prd 배포 시 주석 해제
 
-    // JWT
-    implementation("io.jsonwebtoken:jjwt-api:0.12.3")
-    runtimeOnly("io.jsonwebtoken:jjwt-impl:0.12.3")
-    runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.12.3")
-
-    compileOnly("org.projectlombok:lombok")
-    developmentOnly("org.springframework.boot:spring-boot-devtools")
-    runtimeOnly("com.h2database:h2")
-    annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
-    annotationProcessor("org.projectlombok:lombok")
+    // ── Test ──────────────────────────────────────────────────
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.security:spring-security-test")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
-    testCompileOnly("org.projectlombok:lombok")
-    testAnnotationProcessor("org.projectlombok:lombok")
+
 }
 
 tasks.withType<Test> {

@@ -90,20 +90,6 @@ public class UserController {
     }
 
     /**
-     * 회원 탈퇴
-     * DELETE /api/v1/users/me
-     */
-    @Operation(summary = "회원 탈퇴")
-    @DeleteMapping("/me")
-    public ResponseEntity<ApiResponse<Void>> deleteMe(
-            @AuthenticationPrincipal UserDetails userDetails) {
-
-        Long userId = extractUserId(userDetails);
-        userService.deleteUser(userId);
-        return ResponseEntity.ok(ApiResponse.success());
-    }
-
-    /**
      * JWT 토큰의 subject(사용자 ID 문자열)를 Long으로 변환
      * JwtTokenProvider.createAccessToken()에서 subject = userId(String)으로 저장
      */
